@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiftMax AI Optimizer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background for professional feel */
+            color: #e2e8f0;
+        }
+        .card-bg {
+            background-color: #161b22;
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .tab-active {
+            background-color: #042f2b !important;
+            border-color: #14b8a6 !important;
+            color: #14b8a6 !important;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-start justify-center">
+
+    <div class="w-full max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-teal-400">LiftMax AI Control Center</h1>
+            <p class="text-gray-400 mt-2">Comprehensive Well Optimization and Lifecycle Strategy</p>
+        </header>
+
+        <!-- Real-Time Optimization Panel (Existing Logic) -->
+        <div class="card-bg p-6 rounded-xl shadow-2xl mb-8 border border-gray-700">
+            <h2 class="text-2xl font-semibold mb-4 text-teal-300">1. Real-Time Production Optimization</h2>
+            
+            <!-- Well Selection -->
+            <div class="mb-4">
+                <label for="wellSelect" class="block text-sm font-medium text-gray-400 mb-2">Well Identifier:</label>
+                <select id="wellSelect" 
+                        class="w-full p-3 rounded-lg border border-gray-600 bg-gray-800 text-white focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                        onchange="loadWellData()">
+                    <option value="">-- Select a Well --</option>
+                    <option value="UOG-PERM-H001">UOG-PERM-H001 (High GOR, High Water Cut)</option>
+                    <option value="UOG-EAGL-H015">UOG-EAGL-H015 (Aging/Liquid Loaded)</option>
+                    <option value="UOG-MARC-H220">UOG-MARC-H220 (New/High Production, Sand Prone)</option>
+                </select>
+            </div>
+
+            <!-- Current Status Display -->
+            <div id="statusDisplay" class="mb-4 p-4 border border-gray-700 rounded-lg bg-gray-900 hidden" aria-live="polite">
+                <p class="text-lg font-medium text-teal-400 mb-2">Current Operating Status:</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                    <p><span class="text-gray-500">SPM:</span> <span id="currentSPM" class="font-bold text-white">--</span></p>
+                    <p><span class="text-gray-500">Pump Fillage:</span> <span id="currentFillage" class="font-bold text-white">--</span></p>
+                    <p><span class="text-gray-500">Oil Rate (BPD):</span> <span id="currentOilRate" class="font-bold text-white">--</span></p>
+                    <p><span class="text-gray-500">Casing Pressure:</span> <span id="currentCasingP" class="font-bold text-white">--</span></p>
+                </div>
+            </div>
+
+            <!-- Run Analysis Button -->
+            <button id="analyzeButton" onclick="runOptimizationCycle()" 
+                    class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-lg transition duration-300 ease-in-out disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    disabled>
+                Run Pump Optimization Cycle
+            </button>
+            
+            <!-- Results Panel -->
+            <div class="mt-6">
+                <div id="resultsContainer" class="min-h-[100px] flex flex-col justify-center items-center text-center">
+                    <p id="initialMessage" class="text-gray-500 text-lg">Select a well and run the optimizer to see the AI analysis.</p>
+
+                    <!-- Diagnosis Card (Hidden until results are ready) -->
+                    <div id="diagnosisCard" class="hidden w-full p-4 rounded-lg border-l-4 my-4" role="alert" aria-live="polite">
+                        <p class="text-sm font-medium text-gray-500">AI DIAGNOSIS:</p>
+                        <p id="diagnosisText" class="text-2xl font-extrabold mt-1 text-white">--</p>
+                    </div>
+
+                    <!-- Recommendation Card (Hidden until results are ready) -->
+                    <div id="recommendationCard" class="hidden w-full p-4 rounded-lg bg-gray-900 border border-teal-500">
+                        <p class="text-sm font-medium text-teal-400">RECOMMENDED ACTION:</p>
+                        <p id="recommendationText" class="text-xl font-semibold mt-1 text-white">--</p>
+                        <p id="newSetpointText" class="text-sm text-gray-400 mt-2">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- Specialized Diagnostics & Planning (New Section) -->
+        <div class="card-bg p-6 rounded-xl shadow-2xl border border-gray-700 mt-8">
+            <h2 class="text-2xl font-semibold mb-6 text-teal-300">2. Specialized Diagnostics & Planning</h2>
+
+            <div id="specializedControls" class="flex flex-wrap gap-2 mb-6">
+                <!-- Specialized Topic Buttons -->
+                <button onclick="displaySpecializedAnalysis('ReservoirFluid')" data-topic="ReservoirFluid" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Reservoir & Fluid Property Analysis</button>
+                <button onclick="displaySpecializedAnalysis('ScaleCorrosion')" data-topic="ScaleCorrosion" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Scale & Corrosion Control</button>
+                <button onclick="displaySpecializedAnalysis('SandManagement')" data-topic="SandManagement" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Sand & Solids Management</button>
+                <button onclick="displaySpecializedAnalysis('Ironsulfide')" data-topic="Ironsulfide" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Iron Sulfide Mitigation</button>
+                <button onclick="displaySpecializedAnalysis('LifeCycle')" data-topic="LifeCycle" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Lift Life Cycle Strategy</button>
+                <button onclick="displaySpecializedAnalysis('DesignCompletion')" data-topic="DesignCompletion" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Design & Completion</button>
+                <button onclick="displaySpecializedAnalysis('FrackHitRisk')" data-topic="FrackHitRisk" class="specialized-btn px-4 py-2 text-sm rounded-full border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled>Frack Hit Risk Analysis</button>
+            </div>
+
+            <div id="specializedContent" class="p-4 rounded-lg border border-gray-600 bg-gray-900 min-h-[150px]" aria-live="polite">
+                <p id="specializedInitialMessage" class="text-gray-500">Select a well and then choose a specialized topic above for a detailed AI analysis.</p>
+            </div>
+        </div>
+
+        <p class="text-xs text-gray-600 text-center mt-6">Simulated AI using mock data and rule-based classification/analysis.</p>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Constants for Simulation ---
+        const PUMPAGE_THRESHOLD_FLUID_POUND = 0.50;
+        const PUMPAGE_THRESHOLD_GAS_INT = 0.80;
+        const PUMPAGE_THRESHOLD_HEALTHY = 0.90;
+        const SPM_ADJUST_RATE = 0.5;
+
+        // Mock Well Data Profiles (Extended for Specialized Diagnostics)
+        const MOCK_WELL_PROFILES = {
+            "UOG-PERM-H001": {  // Permian type: High GOR, High Water Cut, Deep, Hot, Horizontal
+                spm_range: [10.0, 15.0],
+                fillage_range: [0.65, 0.90],
+                water_cut: 0.85, 
+                h2s_presence: true, 
+                sand_risk: "Low",
+                drilling_proximity: "Distant",
+                
+                // NEW PROPERTIES
+                permeability_mD: 10,
+                porosity_percent: 12,
+                api_gravity: 38,
+                gas_specific_gravity: 0.75,
+                reservoir_pressure_psi: 3500,
+                reservoir_temperature_f: 220,
+                depth_ft: 12500,
+                wellbore_length_ft: 8000,
+                well_orientation: "Horizontal"
+            },
+            "UOG-EAGL-H015": {  // Eagle Ford type: Aging/Liquid Loaded, Depleted, Low Pressure, Vertical/Slant
+                spm_range: [5.0, 10.0],
+                fillage_range: [0.35, 0.60],
+                water_cut: 0.50,
+                h2s_presence: false,
+                sand_risk: "Medium",
+                drilling_proximity: "Neighboring Zone",
+                
+                // NEW PROPERTIES
+                permeability_mD: 0.5,
+                porosity_percent: 6,
+                api_gravity: 42,
+                gas_specific_gravity: 0.65,
+                reservoir_pressure_psi: 800, // Depleted
+                reservoir_temperature_f: 180,
+                depth_ft: 9000,
+                wellbore_length_ft: 4000,
+                well_orientation: "Vertical"
+            },
+            "UOG-MARC-H220": { // Marcellus/Bakken type: New/High Production, Long Horizontal, High Sand
+                spm_range: [12.0, 18.0],
+                fillage_range: [0.85, 1.0],
+                water_cut: 0.30,
+                h2s_presence: false,
+                sand_risk: "High",
+                drilling_proximity: "Active Offset",
+                
+                // NEW PROPERTIES
+                permeability_mD: 0.001, // Ultra-low permeability
+                porosity_percent: 4,
+                api_gravity: 35,
+                gas_specific_gravity: 0.82,
+                reservoir_pressure_psi: 6000,
+                reservoir_temperature_f: 200,
+                depth_ft: 11000,
+                wellbore_length_ft: 15000, // Long lateral
+                well_orientation: "Lateral"
+            },
+        };
+
+        // --- Specialized Analysis Data (Mocking AI Output) ---
+        const SPECIALIZED_ANALYSIS_DATA = {
+            ReservoirFluid: (data) => {
+                let analysis = `
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 text-sm">
+                        <p><span class="text-gray-500">Permeability:</span> <span class="text-white font-bold">${data.permeability_mD} mD</span></p>
+                        <p><span class="text-gray-500">Porosity:</span> <span class="text-white font-bold">${data.porosity_percent}%</span></p>
+                        <p><span class="text-gray-500">API Gravity:</span> <span class="text-white font-bold">${data.api_gravity}°</span></p>
+                        <p><span class="text-gray-500">Res. Temp:</span> <span class="text-white font-bold">${data.reservoir_temperature_f}°F</span></p>
+                        <p><span class="text-gray-500">Res. Pressure:</span> <span class="text-white font-bold">${data.reservoir_pressure_psi} psi</span></p>
+                        <p><span class="text-gray-500">True Vertical Depth:</span> <span class="text-white font-bold">${data.depth_ft} ft</span></p>
+                        <p><span class="text-gray-500">Wellbore Length:</span> <span class="text-white font-bold">${data.wellbore_length_ft} ft</span></p>
+                        <p><span class="text-gray-500">Well Orientation:</span> <span class="text-white font-bold">${data.well_orientation}</span></p>
+                    </div>
+                `;
+                let recommendation = ``;
+                
+                // Analysis based on key properties
+                if (data.well_orientation === "Horizontal" || data.well_orientation === "Lateral") {
+                    analysis += `<p class="mt-2">**Orientation Impact:** **${data.well_orientation}** wells require specialized downhole tools (e.g., steerable ESPs or long-stroke SRP) to handle the long lateral sections and friction losses.</p>`;
+                }
+                
+                if (data.reservoir_pressure_psi < 1000) {
+                    analysis += `<p>**Pressure Impact:** Critically low reservoir pressure suggests the well is heavily depleted, leading to low pump intake pressure and high risk of **gas interference** and **fluid pound**.</p>`;
+                    recommendation = "Utilize a high-compression ratio pump (e.g., PCP or high-lift SRP) and place the pump as deep as possible to maximize available submergence. **Implement variable speed drive (VSD) control** to precisely manage fluid entry and maintain minimum pump intake pressure.";
+                } else if (data.api_gravity < 30) {
+                     analysis += `<p>**Fluid Impact:** The API Gravity of ${data.api_gravity}° suggests a heavy, viscous crude, which will significantly increase the required torque and rod loading for SRP systems.</p>`;
+                    recommendation = "Consider switching to a **Progressive Cavity Pump (PCP)** due to its superior efficiency with high-viscosity fluids. If using SRP, ensure the rod string design is optimized for high loads and consider a larger pump size.";
+                } else if (data.reservoir_temperature_f > 200) {
+                    analysis += `<p>**Temperature Impact:** High reservoir temperature (${data.reservoir_temperature_f}°F) can cause thermal expansion issues and reduce the lifespan of ESP motors and seals.</p>`;
+                    recommendation = "Select artificial lift components with **high-temperature ratings**, particularly ESP motors. For SRP, ensure proper metallurgy is used to handle thermal stress and high downhole pressure.";
+                } else {
+                    recommendation = "The reservoir and fluid properties are generally favorable. Focus on real-time optimization and standard maintenance practices.";
+                }
+
+                return { analysis, recommendation };
+            },
+            ScaleCorrosion: (data) => {
+                let analysis = `**Well Condition:** High Water Cut (${(data.water_cut * 100).toFixed(0)}%). `;
+                let recommendation = ``;
+                if (data.water_cut > 0.8) {
+                    analysis += `Risk of **Calcium Carbonate Scale** and **Severe Corrosion** is HIGH.`;
+                    recommendation = "Immediate implementation of a capillary injection program for a combined **corrosion inhibitor and scale dissolver/preventative (e.g., phosphonates)**. Conduct continuous corrosion coupon monitoring. Consider fiberglass tubing replacement during next workover.";
+                } else if (data.water_cut > 0.5) {
+                    analysis += `Moderate risk of corrosion due to water presence.`;
+                    recommendation = "Implement a scheduled batch treatment of corrosion inhibitor. Increase monitoring frequency of downhole sensors and check for iron counts monthly.";
+                } else {
+                    analysis += `Low to Moderate risk.`;
+                    recommendation = "Maintain current monitoring program. Batch treat corrosion inhibitor quarterly or based on iron count thresholds.";
+                }
+                return { analysis, recommendation };
+            },
+            SandManagement: (data) => {
+                let analysis = `**Sand Risk Profile:** ${data.sand_risk}. `;
+                let recommendation = ``;
+                if (data.sand_risk === "High") {
+                    analysis += `Significant risk of pump sticking, premature wear, and fill accumulation.`;
+                    recommendation = "Install a **sand control measure** (e.g., slotted liner, gravel pack) during the next intervention. Optimize pump intake design (high-ratio gas anchor). Consider lowering SPM temporarily to reduce sand mobilization.";
+                } else if (data.sand_risk === "Medium") {
+                    analysis += `Intermittent sand production risk, primarily during flow regime changes.`;
+                    recommendation = "Monitor differential pressure for signs of sand fill. Implement a routine flushing schedule with fresh water or diesel. Use an abrasion-resistant coating on the pump barrel.";
+                } else {
+                    analysis += `Low sand risk expected.`;
+                    recommendation = "No immediate action required. Maintain robust surface filtration.";
+                }
+                return { analysis, recommendation };
+            },
+            Ironsulfide: (data) => {
+                let analysis = `**H2S Presence:** ${data.h2s_presence ? 'DETECTED' : 'Not Detected'}. `;
+                let recommendation = ``;
+                if (data.h2s_presence) {
+                    analysis += `H₂S presence greatly elevates the risk of **Iron Sulfide (FeS) precipitation**, causing pump plugging and rapid internal corrosion.`;
+                    recommendation = "Inject a continuous scavenger chemical (e.g., triazine) to control H₂S levels. Use specific Iron Sulfide dispersants/dissolvers periodically to clean up the wellbore and pump inlet.";
+                } else {
+                    analysis += `Risk of major Iron Sulfide precipitation is low.`;
+                    recommendation = "Ensure biocide treatment is maintained to prevent potential SRB activity which can lead to localized FeS formation.";
+                }
+                return { analysis, recommendation };
+            },
+            LifeCycle: (data) => {
+                let currentLift = "Sucker Rod Pump (SRP)";
+                let recommendation = ``;
+                let analysis = `**Current Lift Method:** ${currentLift}. **Well Status:** ${data.inferred_pump_fillage < 0.8 ? 'DECLINING' : 'HEALTHY/MATURE'}.`;
+
+                if (data.inferred_pump_fillage < 0.6) {
+                    analysis += ` The well is entering its **Late Life** phase with significant fluid pound/loading.`;
+                    recommendation = "Phase-out SRP and transition to a lower-volume lift method like **Progressive Cavity Pump (PCP)** to handle high viscosity and reduce energy costs, or convert to a low-pressure **Gas Lift** system.";
+                } else if (data.oil_rate_bpd > 500) {
+                    analysis += ` The well is in its **Early Life/High Volume** phase.`;
+                    recommendation = "Maintain SRP but monitor for gas interference and rod integrity due to high load. Future consideration for **Electrical Submersible Pump (ESP)** if rate stays above 1000 BPD is advised for optimization.";
+                } else {
+                    analysis += ` The well is in its **Mid Life** phase.`;
+                    recommendation = "Maintain current SRP operation. Focus on reliability and maximizing run-time by implementing advanced monitoring (VFD control, predictive maintenance).";
+                }
+                return { analysis, recommendation };
+            },
+            DesignCompletion: (data) => {
+                let completion = data.sand_risk === "High" ? "Open-Hole/Frac Pack" : "Perforated Casing";
+                let liftType = "Sucker Rod Pump (SRP)";
+                let analysis = `**Current Completion:** ${completion}. **Current Lift:** ${liftType}.`;
+                let recommendation = ``;
+
+                if (data.sand_risk === "High") {
+                    analysis += ` The current design is vulnerable to solids intrusion.`;
+                    recommendation = "For future wells in this area, implement an isolation completion design (e.g., dedicated liner) and select a modular ESP system that is easily replaced. For this well, prioritize downhole separation at the pump intake.";
+                } else if (data.h2s_presence || data.water_cut > 0.7) {
+                    analysis += ` High chemical stress on tubing and rods.`;
+                    recommendation = "The completion design needs **enhanced metallurgy**. Mandate the use of K-Monel or Stainless Steel rods and corrosion-resistant coated tubing for any new equipment installation to ensure optimal artificial lift system lifespan.";
+                } else {
+                    analysis += ` Design is suitable for current conditions.`;
+                    recommendation = "Focus on optimizing the pump depth and sizing to match the current Inflow Performance Relationship (IPR). No immediate design changes required.";
+                }
+                return { analysis, recommendation };
+            },
+            FrackHitRisk: (data) => {
+                let analysis = `**Offset Well Status:** ${data.drilling_proximity}. `;
+                let recommendation = ``;
+                const proximity = data.drilling_proximity;
+
+                if (proximity === "Active Offset") {
+                    analysis += `**HIGH RISK** of communication/frac hit due to nearby active hydraulic fracturing operations. This can lead to rapid pressure transients and pump failure.`;
+                    recommendation = "Immediately **implement preventative measures**: Slow the SPM to minimum (e.g., 2 SPM) or shut down the pump 24 hours prior to and during high-pressure pump stages on the offset well. Install high-frequency pressure transducers for real-time monitoring.";
+                } else if (proximity === "Neighboring Zone") {
+                    analysis += `**MODERATE RISK** of pressure transfer from nearby, non-direct-offset fracturing operations.`;
+                    recommendation = "Establish a clear communication protocol with the drilling team. Implement a **conditional shutdown plan** triggered by pre-set casing pressure spikes (e.g., >200 psi surge). Review operational data for historical pressure communication trends.";
+                } else {
+                    analysis += `**LOW RISK** of communication. Neighboring activity is distant or complete.`;
+                    recommendation = "Maintain standard operational monitoring. No specialized Frac Hit mitigation strategy is required at this time.";
+                }
+                return { analysis, recommendation };
+            }
+        };
+
+        let currentWellData = null;
+        const analyzeButton = document.getElementById('analyzeButton');
+        const wellSelect = document.getElementById('wellSelect');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const diagnosisCard = document.getElementById('diagnosisCard');
+        const recommendationCard = document.getElementById('recommendationCard');
+        const initialMessage = document.getElementById('initialMessage');
+        const diagnosisText = document.getElementById('diagnosisText');
+        const recommendationText = document.getElementById('recommendationText');
+        const newSetpointText = document.getElementById('newSetpointText');
+        const specializedContent = document.getElementById('specializedContent');
+        const specializedButtons = document.querySelectorAll('.specialized-btn');
+        
+        // State to track the active specialized button
+        let activeSpecializedTopic = null;
+
+        /**
+         * Simulates receiving real-time data based on the selected well profile.
+         */
+        function mockDataIngestion(wellId) {
+            const profile = MOCK_WELL_PROFILES[wellId];
+
+            // Use the profile ranges to generate more realistic (though still random) data
+            const current_spm = (Math.random() * (profile.spm_range[1] - profile.spm_range[0]) + profile.spm_range[0]).toFixed(1);
+            const inferred_pump_fillage = Math.random() * (profile.fillage_range[1] - profile.fillage_range[0]) + profile.fillage_range[0];
+
+            return {
+                'well_id': wellId,
+                'current_spm': parseFloat(current_spm),
+                'inferred_pump_fillage': inferred_pump_fillage,
+                'casing_pressure_psi': Math.floor(Math.random() * (1200 - 300) + 300),
+                'tubing_pressure_psi': Math.floor(Math.random() * (350 - 100) + 100),
+                'oil_rate_bpd': Math.floor(Math.random() * (700 - 50) + 50),
+                // Pass all profile data directly
+                ...profile
+            };
+        }
+
+        /**
+         * Loads mock data when a well is selected and updates the UI.
+         */
+        function loadWellData() {
+            const wellId = wellSelect.value;
+            
+            // Enable/Disable buttons based on selection
+            const isDisabled = !wellId;
+            analyzeButton.disabled = isDisabled;
+            specializedButtons.forEach(btn => btn.disabled = isDisabled);
+            
+            if (!wellId) {
+                statusDisplay.classList.add('hidden');
+                specializedContent.innerHTML = '<p id="specializedInitialMessage" class="text-gray-500">Select a well and then choose a specialized topic above for a detailed AI analysis.</p>';
+                activeSpecializedTopic = null;
+                specializedButtons.forEach(btn => btn.classList.remove('tab-active'));
+                return;
+            }
+
+            // Mock data ingestion
+            currentWellData = mockDataIngestion(wellId);
+
+            // Update status display
+            document.getElementById('currentSPM').textContent = currentWellData.current_spm;
+            document.getElementById('currentFillage').textContent = `${(currentWellData.inferred_pump_fillage * 100).toFixed(1)}%`;
+            document.getElementById('currentOilRate').textContent = currentWellData.oil_rate_bpd;
+            document.getElementById('currentCasingP').textContent = currentWellData.casing_pressure_psi + ' psi';
+
+            statusDisplay.classList.remove('hidden');
+            
+            // Clear previous real-time results
+            initialMessage.classList.remove('hidden');
+            diagnosisCard.classList.add('hidden');
+            recommendationCard.classList.add('hidden');
+            
+            // If a specialized topic was active, re-run the analysis for the new well
+            if (activeSpecializedTopic) {
+                displaySpecializedAnalysis(activeSpecializedTopic, true);
+            } else {
+                specializedContent.innerHTML = `<p class="text-gray-500">Well **${wellId}** data loaded. Choose a specialized topic for a full analysis.</p>`;
+            }
+        }
+
+        /**
+         * Simulates a classification model diagnosing the well's condition.
+         */
+        function diagnoseWell(data) {
+            const fillage = data.inferred_pump_fillage;
+            
+            if (fillage <= PUMPAGE_THRESHOLD_FLUID_POUND) {
+                return "FLUID_POUND";
+            } else if (fillage < PUMPAGE_THRESHOLD_GAS_INT) {
+                return "GAS_INTERFERENCE";
+            } else if (fillage < PUMPAGE_THRESHOLD_HEALTHY) {
+                return "SUBOPTIMAL";
+            } else {
+                return "HEALTHY";
+            }
+        }
+
+        /**
+         * Generates an optimal setpoint recommendation based on the diagnosis.
+         */
+        function recommendAction(data, diagnosis) {
+            const current_spm = data.current_spm;
+            let action = "";
+            let new_setpoint = current_spm;
+            
+            if (diagnosis === "FLUID_POUND") {
+                new_setpoint = Math.max(parseFloat((current_spm - SPM_ADJUST_RATE).toFixed(1)), 5.0);
+                action = "DECREASE SPM to allow wellbore to refill and eliminate Fluid Pound.";
+            
+            } else if (diagnosis === "GAS_INTERFERENCE") {
+                new_setpoint = Math.max(parseFloat((current_spm - SPM_ADJUST_RATE / 2).toFixed(1)), 5.0);
+                action = "SLIGHTLY DECREASE SPM to reduce free gas entry and improve pump compression efficiency.";
+
+            } else if (diagnosis === "SUBOPTIMAL") {
+                new_setpoint = parseFloat((current_spm + SPM_ADJUST_RATE / 4).toFixed(1));
+                action = "SLIGHTLY INCREASE SPM to test for maximum production rate.";
+
+            } else if (diagnosis === "HEALTHY") {
+                new_setpoint = current_spm;
+                action = "MAINTAIN CURRENT SETTINGS. System is operating at peak efficiency.";
+            }
+
+            return { action, new_setpoint };
+        }
+
+        /**
+         * Executes a single monitoring and optimization loop for real-time control.
+         */
+        function runOptimizationCycle() {
+            if (!currentWellData) {
+                return;
+            }
+
+            // Start loading state
+            analyzeButton.textContent = "Analyzing...";
+            analyzeButton.classList.add('pulse');
+            analyzeButton.disabled = true;
+            initialMessage.classList.add('hidden');
+            diagnosisCard.classList.add('hidden');
+            recommendationCard.classList.add('hidden');
+
+            // Simulate AI processing delay
+            setTimeout(() => {
+                
+                // 1. Diagnosis
+                const diagnosis = diagnoseWell(currentWellData);
+                
+                // 2. Recommendation
+                const { action, new_setpoint } = recommendAction(currentWellData, diagnosis);
+                
+                // 3. Display Results
+                displayRealTimeResults(diagnosis, action, new_setpoint, currentWellData.current_spm);
+
+                // End loading state
+                analyzeButton.textContent = "Run Pump Optimization Cycle";
+                analyzeButton.classList.remove('pulse');
+                analyzeButton.disabled = false;
+            }, 1500); // 1.5 second delay
+        }
+
+        /**
+         * Updates the real-time optimization results section.
+         */
+        function displayRealTimeResults(diagnosis, action, new_setpoint, old_spm) {
+            diagnosisCard.classList.remove('hidden');
+            recommendationCard.classList.remove('hidden');
+            
+            let colorClass = '';
+            let borderColor = '';
+            
+            switch (diagnosis) {
+                case "FLUID_POUND":
+                    colorClass = 'text-red-400';
+                    borderColor = 'border-red-500';
+                    break;
+                case "GAS_INTERFERENCE":
+                    colorClass = 'text-yellow-400';
+                    borderColor = 'border-yellow-500';
+                    break;
+                case "SUBOPTIMAL":
+                    colorClass = 'text-orange-400';
+                    borderColor = 'border-orange-500';
+                    break;
+                case "HEALTHY":
+                default:
+                    colorClass = 'text-green-400';
+                    borderColor = 'border-green-500';
+                    break;
+            }
+
+            diagnosisCard.className = `w-full p-4 rounded-lg border-l-4 my-4 ${borderColor}`;
+            diagnosisText.textContent = diagnosis.replace('_', ' ');
+            diagnosisText.classList.remove('text-white', 'text-red-400', 'text-yellow-400', 'text-orange-400', 'text-green-400');
+            diagnosisText.classList.add(colorClass);
+
+            recommendationText.textContent = action;
+            
+            if (old_spm !== new_setpoint) {
+                 newSetpointText.textContent = `New Target SPM: ${new_setpoint} (from ${old_spm})`;
+            } else {
+                 newSetpointText.textContent = `SPM remains at: ${new_setpoint}`;
+            }
+        }
+        
+        /**
+         * Displays the specialized analysis for the chosen topic.
+         */
+        function displaySpecializedAnalysis(topic, isReload=false) {
+            if (!currentWellData) {
+                specializedContent.innerHTML = '<p class="text-red-500">Error: Please select a well first.</p>';
+                return;
+            }
+
+            // Update button state
+            specializedButtons.forEach(btn => {
+                btn.classList.remove('tab-active');
+                if (btn.dataset.topic === topic) {
+                    btn.classList.add('tab-active');
+                }
+            });
+            activeSpecializedTopic = topic;
+
+            const { analysis, recommendation } = SPECIALIZED_ANALYSIS_DATA[topic](currentWellData);
+            const topicTitle = document.querySelector(`[data-topic="${topic}"]`).textContent;
+
+            specializedContent.innerHTML = `
+                <h3 class="text-xl font-semibold text-teal-400 mb-2">${topicTitle} Analysis for ${currentWellData.well_id}</h3>
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-1">AI DIAGNOSTIC SUMMARY:</p>
+                    <div class="text-white">${analysis}</div>
+                </div>
+                <div class="p-3 rounded-lg border border-teal-600 bg-gray-800">
+                    <p class="text-sm font-medium text-teal-400 mb-1">STRATEGIC RECOMMENDATION:</p>
+                    <p class="text-lg text-white">${recommendation}</p>
+                </div>
+            `;
+        }
+
+        // Initialize by loading the first well's data if it exists
+        window.onload = loadWellData;
+
+    </script>
+</body>
+</html>
